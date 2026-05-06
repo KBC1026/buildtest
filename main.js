@@ -1,89 +1,194 @@
-const totalInput = document.querySelector("#totalCount");
-const winnerInput = document.querySelector("#winnerCount");
-const prefixInput = document.querySelector("#labelPrefix");
-const shuffleButton = document.querySelector("#shuffleButton");
-const resetButton = document.querySelector("#resetButton");
-const drawArea = document.querySelector("#drawArea");
-const result = document.querySelector("#result");
+const apiKeyInput = document.querySelector("#apiKeyInput");
+const modelSelect = document.querySelector("#modelSelect");
+const saveKeyButton = document.querySelector("#saveKeyButton");
+const clearChatButton = document.querySelector("#clearChatButton");
+const chatLog = document.querySelector("#chatLog");
+const chatForm = document.querySelector("#chatForm");
+const messageInput = document.querySelector("#messageInput");
+const sendButton = document.querySelector("#sendButton");
 
-let lots = [];
-let openedCount = 0;
+const STORAGE_KEY = "ai-chat-openai-key";
+const MODEL_KEY = "ai-chat-model";
 
-function clampSettings() {
-  const total = Math.min(50, Math.max(2, Number(totalInput.value) || 10));
-  const winners = Math.min(total - 1, Math.max(1, Number(winnerInput.value) || 1));
+const messages = [
+  {
+    role: "assistant",
+    content: "안녕하세요. 무엇을 도와드릴까요?",
+  },
+];
 
-  totalInput.value = total;
-  winnerInput.max = total - 1;
-  winnerInput.value = winners;
+function loadSettings() {
+  const savedKey = sessionStorage.getItem(STORAGE_KEY);
+  const savedModel = localStorage.getItem(MODEL_KEY);
 
-  return { total, winners };
-}
-
-function shuffle(values) {
-  const shuffled = [...values];
-
-  for (let i = shuffled.length - 1; i > 0; i -= 1) {
-    const randomIndex = Math.floor(Math.random() * (i + 1));
-    [shuffled[i], shuffled[randomIndex]] = [shuffled[randomIndex], shuffled[i]];
+  if (savedKey) {
+    apiKeyInput.value = savedKey;
   }
 
-  return shuffled;
+  if (savedModel && [...modelSelect.options].some((option) => option.value === savedModel)) {
+    modelSelect.value = savedModel;
+  }
 }
 
-function createLots() {
-  const { total, winners } = clampSettings();
-  const pool = Array.from({ length: total }, (_, index) => index < winners);
+function saveSettings() {
+  const apiKey = apiKeyInput.value.trim();
 
-  lots = shuffle(pool);
-  openedCount = 0;
-  result.textContent = "제비가 준비되었습니다.";
-  renderLots();
-}
-
-function openLot(lot, isWinner) {
-  if (lot.classList.contains("open")) return;
-
-  openedCount += 1;
-  lot.classList.add("open");
-  lot.disabled = true;
-  lot.textContent = isWinner ? "당첨" : "꽝";
-
-  if (!isWinner) {
-    lot.classList.add("lose");
+  if (apiKey) {
+    sessionStorage.setItem(STORAGE_KEY, apiKey);
+  } else {
+    sessionStorage.removeItem(STORAGE_KEY);
   }
 
-  result.textContent = isWinner
-    ? `축하합니다. ${openedCount}번째 뽑기에서 당첨입니다.`
-    : `${openedCount}번째 뽑기는 꽝입니다.`;
+  localStorage.setItem(MODEL_KEY, modelSelect.value);
+  showStatus(apiKey ? "API 키가 세션에 저장되었습니다." : "저장된 API 키를 삭제했습니다.");
 }
 
-function renderLots() {
-  const prefix = prefixInput.value.trim() || "제비";
-  drawArea.innerHTML = "";
+function showStatus(text) {
+  const existing = document.querySelector(".status-message");
 
-  lots.forEach((isWinner, index) => {
-    const lot = document.createElement("button");
-    lot.type = "button";
-    lot.className = "lot";
-    lot.textContent = `${prefix} ${index + 1}`;
-    lot.setAttribute("aria-label", `${prefix} ${index + 1} 뽑기`);
-    lot.addEventListener("click", () => openLot(lot, isWinner));
-    drawArea.append(lot);
+  if (existing) {
+    existing.remove();
+  }
+
+  const status = document.createElement("p");
+  status.className = "status-message";
+  status.textContent = text;
+  chatLog.append(status);
+  chatLog.scrollTop = chatLog.scrollHeight;
+}
+
+function renderMessages() {
+  chatLog.innerHTML = "";
+
+  messages.forEach((message) => {
+    const bubble = document.createElement("article");
+    bubble.className = `message ${message.role}`;
+
+    const meta = document.createElement("span");
+    meta.className = "message-meta";
+    meta.textContent = message.role === "user" ? "나" : "AI";
+
+    const content = document.createElement("p");
+    content.textContent = message.content;
+
+    bubble.append(meta, content);
+    chatLog.append(bubble);
   });
+
+  chatLog.scrollTop = chatLog.scrollHeight;
 }
 
-function reset() {
-  totalInput.value = 10;
-  winnerInput.value = 2;
-  prefixInput.value = "제비";
-  createLots();
+function setLoading(isLoading) {
+  sendButton.disabled = isLoading;
+  messageInput.disabled = isLoading;
+  sendButton.textContent = isLoading ? "응답 중" : "전송";
 }
 
-shuffleButton.addEventListener("click", createLots);
-resetButton.addEventListener("click", reset);
-totalInput.addEventListener("change", clampSettings);
-winnerInput.addEventListener("change", clampSettings);
-prefixInput.addEventListener("input", renderLots);
+function buildInput() {
+  return messages.map((message) => ({
+    role: message.role === "assistant" ? "assistant" : "user",
+    content: message.content,
+  }));
+}
 
-createLots();
+function getResponseText(data) {
+  if (typeof data.output_text === "string" && data.output_text.trim()) {
+    return data.output_text.trim();
+  }
+
+  const output = data.output || [];
+  const textParts = [];
+
+  output.forEach((item) => {
+    (item.content || []).forEach((content) => {
+      if (content.type === "output_text" && content.text) {
+        textParts.push(content.text);
+      }
+    });
+  });
+
+  return textParts.join("\n").trim() || "응답 텍스트를 찾지 못했습니다.";
+}
+
+async function requestAiResponse() {
+  const apiKey = apiKeyInput.value.trim();
+
+  if (!apiKey) {
+    throw new Error("API 키를 먼저 입력하세요.");
+  }
+
+  sessionStorage.setItem(STORAGE_KEY, apiKey);
+  localStorage.setItem(MODEL_KEY, modelSelect.value);
+
+  const response = await fetch("https://api.openai.com/v1/responses", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({
+      model: modelSelect.value,
+      instructions: "You are a concise, helpful Korean AI chat assistant.",
+      input: buildInput(),
+      max_output_tokens: 1200,
+    }),
+  });
+
+  const data = await response.json().catch(() => ({}));
+
+  if (!response.ok) {
+    const message = data.error?.message || `요청에 실패했습니다. HTTP ${response.status}`;
+    throw new Error(message);
+  }
+
+  return getResponseText(data);
+}
+
+async function handleSubmit(event) {
+  event.preventDefault();
+
+  const text = messageInput.value.trim();
+
+  if (!text) return;
+
+  messages.push({ role: "user", content: text });
+  messageInput.value = "";
+  renderMessages();
+  setLoading(true);
+
+  try {
+    const answer = await requestAiResponse();
+    messages.push({ role: "assistant", content: answer });
+  } catch (error) {
+    messages.push({
+      role: "assistant",
+      content: `오류: ${error.message}`,
+    });
+  } finally {
+    renderMessages();
+    setLoading(false);
+    messageInput.focus();
+  }
+}
+
+function clearChat() {
+  messages.splice(0, messages.length, {
+    role: "assistant",
+    content: "새 대화를 시작합니다.",
+  });
+  renderMessages();
+  messageInput.focus();
+}
+
+saveKeyButton.addEventListener("click", saveSettings);
+modelSelect.addEventListener("change", () => localStorage.setItem(MODEL_KEY, modelSelect.value));
+clearChatButton.addEventListener("click", clearChat);
+chatForm.addEventListener("submit", handleSubmit);
+messageInput.addEventListener("keydown", (event) => {
+  if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) {
+    chatForm.requestSubmit();
+  }
+});
+
+loadSettings();
+renderMessages();

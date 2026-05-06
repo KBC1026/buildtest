@@ -3,40 +3,48 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="간단하게 사용할 수 있는 제비뽑기 웹페이지" />
-  <title>제비뽑기</title>
+  <meta name="description" content="OpenAI API 키로 바로 사용해 보는 AI Chat 웹페이지" />
+  <title>AI Chat</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <main class="app">
-    <section class="intro">
-      <p class="eyebrow">간단한 추첨 도구</p>
-      <h1>제비뽑기</h1>
-      <p>전체 제비 수와 당첨 수를 정한 뒤 섞고, 원하는 제비를 눌러 결과를 확인하세요.</p>
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">OpenAI Responses API</p>
+        <h1>AI Chat</h1>
+      </div>
+      <button id="clearChatButton" class="ghost" type="button">대화 지우기</button>
+    </header>
+
+    <section class="settings" aria-label="API 설정">
+      <label class="api-key-field">
+        API Key
+        <input id="apiKeyInput" type="password" autocomplete="off" placeholder="sk-..." />
+      </label>
+      <label>
+        Model
+        <select id="modelSelect">
+          <option value="gpt-5.4-mini" selected>gpt-5.4-mini</option>
+          <option value="gpt-5.4">gpt-5.4</option>
+          <option value="gpt-5.5">gpt-5.5</option>
+          <option value="gpt-5-mini">gpt-5-mini</option>
+        </select>
+      </label>
+      <button id="saveKeyButton" type="button">키 저장</button>
     </section>
 
-    <section class="controls" aria-label="제비 설정">
-      <label>
-        전체 제비 수
-        <input id="totalCount" type="number" min="2" max="50" value="10" />
-      </label>
-      <label>
-        당첨 수
-        <input id="winnerCount" type="number" min="1" max="49" value="2" />
-      </label>
-      <label>
-        표시 이름
-        <input id="labelPrefix" type="text" maxlength="12" value="제비" />
-      </label>
-    </section>
+    <p class="security-note">
+      API 키는 이 브라우저 세션에만 저장됩니다. 공개 사이트 코드에는 키가 포함되지 않습니다.
+    </p>
 
-    <div class="actions">
-      <button id="shuffleButton" type="button">섞기</button>
-      <button id="resetButton" class="secondary" type="button">초기화</button>
-    </div>
+    <section id="chatLog" class="chat-log" aria-live="polite" aria-label="채팅 내용"></section>
 
-    <section id="drawArea" class="draw-area" aria-live="polite"></section>
-    <div id="result" class="result" role="status"></div>
+    <form id="chatForm" class="composer">
+      <label class="sr-only" for="messageInput">메시지</label>
+      <textarea id="messageInput" rows="3" placeholder="메시지를 입력하세요"></textarea>
+      <button id="sendButton" type="submit">전송</button>
+    </form>
   </main>
 
   <script src="main.js"></script>
