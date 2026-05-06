@@ -121,8 +121,24 @@ textarea {
   border: 1px solid var(--line);
   border-radius: 6px;
   color: var(--text);
+  -webkit-text-fill-color: var(--text);
+  caret-color: var(--primary);
   background: #fff;
   outline: none;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: #8a94a6;
+  opacity: 1;
+  -webkit-text-fill-color: #8a94a6;
+}
+
+input::selection,
+textarea::selection {
+  background: rgba(23, 105, 170, 0.22);
+  color: var(--text);
+  -webkit-text-fill-color: var(--text);
 }
 
 input,
@@ -144,6 +160,15 @@ select:focus,
 textarea:focus {
   border-color: var(--primary);
   box-shadow: 0 0 0 3px rgba(23, 105, 170, 0.16);
+}
+
+input:-webkit-autofill,
+input:-webkit-autofill:focus,
+textarea:-webkit-autofill,
+textarea:-webkit-autofill:focus {
+  box-shadow: 0 0 0 1000px #fff inset, 0 0 0 3px rgba(23, 105, 170, 0.16);
+  -webkit-text-fill-color: var(--text);
+  caret-color: var(--primary);
 }
 
 .security-note {
