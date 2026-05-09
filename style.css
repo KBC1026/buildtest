@@ -101,7 +101,7 @@ h1 {
 
 .settings {
   display: grid;
-  grid-template-columns: minmax(220px, 1fr) minmax(160px, 220px) auto;
+  grid-template-columns: minmax(160px, 240px);
   gap: 12px;
   align-items: end;
 }

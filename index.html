@@ -18,10 +18,6 @@
     </header>
 
     <section class="settings" aria-label="API 설정">
-      <label class="api-key-field">
-        API Key
-        <input id="apiKeyInput" type="password" autocomplete="off" placeholder="sk-..." />
-      </label>
       <label>
         Model
         <select id="modelSelect">
@@ -31,11 +27,10 @@
           <option value="gpt-5-mini">gpt-5-mini</option>
         </select>
       </label>
-      <button id="saveKeyButton" type="button">키 저장</button>
     </section>
 
     <p class="security-note">
-      API 키는 이 브라우저 세션에만 저장됩니다. 공개 사이트 코드에는 키가 포함되지 않습니다.
+      API 키는 브라우저에 입력하지 않습니다. 서버의 OPENAI_API_KEY 환경변수로만 사용됩니다.
     </p>
 
     <section id="chatLog" class="chat-log" aria-live="polite" aria-label="채팅 내용"></section>

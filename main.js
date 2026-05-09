@@ -1,13 +1,10 @@
-const apiKeyInput = document.querySelector("#apiKeyInput");
 const modelSelect = document.querySelector("#modelSelect");
-const saveKeyButton = document.querySelector("#saveKeyButton");
 const clearChatButton = document.querySelector("#clearChatButton");
 const chatLog = document.querySelector("#chatLog");
 const chatForm = document.querySelector("#chatForm");
 const messageInput = document.querySelector("#messageInput");
 const sendButton = document.querySelector("#sendButton");
 
-const STORAGE_KEY = "ai-chat-openai-key";
 const MODEL_KEY = "ai-chat-model";
 
 const messages = [
@@ -18,29 +15,11 @@ const messages = [
 ];
 
 function loadSettings() {
-  const savedKey = sessionStorage.getItem(STORAGE_KEY);
   const savedModel = localStorage.getItem(MODEL_KEY);
-
-  if (savedKey) {
-    apiKeyInput.value = savedKey;
-  }
 
   if (savedModel && [...modelSelect.options].some((option) => option.value === savedModel)) {
     modelSelect.value = savedModel;
   }
-}
-
-function saveSettings() {
-  const apiKey = apiKeyInput.value.trim();
-
-  if (apiKey) {
-    sessionStorage.setItem(STORAGE_KEY, apiKey);
-  } else {
-    sessionStorage.removeItem(STORAGE_KEY);
-  }
-
-  localStorage.setItem(MODEL_KEY, modelSelect.value);
-  showStatus(apiKey ? "API 키가 세션에 저장되었습니다." : "저장된 API 키를 삭제했습니다.");
 }
 
 function showStatus(text) {
@@ -91,46 +70,17 @@ function buildInput() {
   }));
 }
 
-function getResponseText(data) {
-  if (typeof data.output_text === "string" && data.output_text.trim()) {
-    return data.output_text.trim();
-  }
-
-  const output = data.output || [];
-  const textParts = [];
-
-  output.forEach((item) => {
-    (item.content || []).forEach((content) => {
-      if (content.type === "output_text" && content.text) {
-        textParts.push(content.text);
-      }
-    });
-  });
-
-  return textParts.join("\n").trim() || "응답 텍스트를 찾지 못했습니다.";
-}
-
 async function requestAiResponse() {
-  const apiKey = apiKeyInput.value.trim();
-
-  if (!apiKey) {
-    throw new Error("API 키를 먼저 입력하세요.");
-  }
-
-  sessionStorage.setItem(STORAGE_KEY, apiKey);
   localStorage.setItem(MODEL_KEY, modelSelect.value);
 
-  const response = await fetch("https://api.openai.com/v1/responses", {
+  const response = await fetch("/api/chat", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${apiKey}`,
     },
     body: JSON.stringify({
       model: modelSelect.value,
-      instructions: "You are a concise, helpful Korean AI chat assistant.",
-      input: buildInput(),
-      max_output_tokens: 1200,
+      messages: buildInput(),
     }),
   });
 
@@ -141,7 +91,7 @@ async function requestAiResponse() {
     throw new Error(message);
   }
 
-  return getResponseText(data);
+  return data.text || "응답 텍스트를 찾지 못했습니다.";
 }
 
 async function handleSubmit(event) {
@@ -180,7 +130,6 @@ function clearChat() {
   messageInput.focus();
 }
 
-saveKeyButton.addEventListener("click", saveSettings);
 modelSelect.addEventListener("change", () => localStorage.setItem(MODEL_KEY, modelSelect.value));
 clearChatButton.addEventListener("click", clearChat);
 chatForm.addEventListener("submit", handleSubmit);
