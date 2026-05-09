@@ -1,0 +1,9 @@
+{
+  "scripts": {
+    "build": "mkdir -p dist && cp index.html config.js style.css main.js dist/",
+    "deploy:cloudflare": "npm run build && npx wrangler pages deploy dist --project-name buildtest"
+  },
+  "devDependencies": {
+    "wrangler": "^4.0.0"
+  }
+}
