@@ -36,8 +36,14 @@ https://KBC1026.github.io/buildtest/
 
 GitHub Pages는 정적 파일만 실행합니다. 따라서 위 링크에서는 화면은 열리지만 `/api/chat` 서버 기능은 동작하지 않습니다. AI 채팅까지 운영하려면 `app.py`를 서버 호스팅에 별도로 배포하고, 해당 서버에 `OPENAI_API_KEY` 환경변수를 설정해야 합니다.
 
+## Render 서버 배포
+
+이 저장소에는 Render Blueprint 설정인 `render.yaml`이 포함되어 있습니다.
+
+Render에서 이 GitHub 저장소를 Blueprint로 연결한 뒤, `OPENAI_API_KEY` 값을 입력하면 `app.py`가 웹 서비스로 배포됩니다.
+
 백엔드 서버를 별도로 배포한 뒤에는 `config.js`의 값을 서버 주소로 바꿉니다.
 
 ```js
-window.AI_CHAT_API_URL = "https://your-server.example.com/api/chat";
+window.AI_CHAT_API_URL = "https://buildtest-ai-chat.onrender.com/api/chat";
 ```
