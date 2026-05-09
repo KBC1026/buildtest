@@ -35,6 +35,7 @@ cleanup() {
 trap cleanup EXIT
 
 cp index.html "$tmp_dir/index.html"
+cp config.js "$tmp_dir/config.js"
 cp style.css "$tmp_dir/style.css"
 cp main.js "$tmp_dir/main.js"
 touch "$tmp_dir/.nojekyll"

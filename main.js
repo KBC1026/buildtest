@@ -6,7 +6,7 @@ const messageInput = document.querySelector("#messageInput");
 const sendButton = document.querySelector("#sendButton");
 
 const MODEL_KEY = "ai-chat-model";
-const API_URL = "/api/chat";
+const API_URL = window.AI_CHAT_API_URL || "/api/chat";
 
 const messages = [
   {
