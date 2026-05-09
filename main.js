@@ -6,6 +6,7 @@ const messageInput = document.querySelector("#messageInput");
 const sendButton = document.querySelector("#sendButton");
 
 const MODEL_KEY = "ai-chat-model";
+const API_URL = "/api/chat";
 
 const messages = [
   {
@@ -73,7 +74,7 @@ function buildInput() {
 async function requestAiResponse() {
   localStorage.setItem(MODEL_KEY, modelSelect.value);
 
-  const response = await fetch("/api/chat", {
+  const response = await fetch(API_URL, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -87,7 +88,10 @@ async function requestAiResponse() {
   const data = await response.json().catch(() => ({}));
 
   if (!response.ok) {
-    const message = data.error?.message || `요청에 실패했습니다. HTTP ${response.status}`;
+    let message = data.error?.message || `요청에 실패했습니다. HTTP ${response.status}`;
+    if (response.status === 405) {
+      message = "AI 서버가 실행되지 않는 정적 호스팅에서 열렸습니다. 워크스페이스 미리보기는 app.py 서버로 실행해야 하고, GitHub Pages에서는 별도 서버 배포가 필요합니다.";
+    }
     throw new Error(message);
   }
 
